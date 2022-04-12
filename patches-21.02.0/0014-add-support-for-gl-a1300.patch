@@ -1,0 +1,608 @@
+From 3158f47a574137f231fc60c106d5fad9fdae85fd Mon Sep 17 00:00:00 2001
+From: gl-yangweiping <weiping.yang@gl-inet.com>
+Date: Mon, 11 Apr 2022 22:14:25 -0400
+Subject: [PATCH] add support for gl-a1300
+
+---
+ package/boot/uboot-envtools/files/ipq40xx     |   1 +
+ package/firmware/ipq-wifi/Makefile            |   2 +
+ .../ipq-wifi/board-glinet_gl-a1300.qca4019    | Bin 0 -> 48596 bytes
+ .../ipq40xx/base-files/etc/board.d/01_leds    |   3 +-
+ .../ipq40xx/base-files/etc/board.d/02_network |  11 +-
+ .../etc/hotplug.d/firmware/11-ath10k-caldata  |   2 +
+ .../preinit/06_set_preinit_iface_ipq40xx.sh   |   1 +
+ .../base-files/lib/upgrade/platform.sh        |   1 +
+ .../arm/boot/dts/qcom-ipq4018-gl-a1300.dts    | 320 ++++++++++++++++++
+ target/linux/ipq40xx/image/generic.mk         |  18 +
+ .../patches-5.4/998-add-a1300-dts-node.patch  |  28 ++
+ 11 files changed, 383 insertions(+), 4 deletions(-)
+ create mode 100644 package/firmware/ipq-wifi/board-glinet_gl-a1300.qca4019
+ create mode 100644 target/linux/ipq40xx/files/arch/arm/boot/dts/qcom-ipq4018-gl-a1300.dts
+ create mode 100644 target/linux/ipq40xx/patches-5.4/998-add-a1300-dts-node.patch
+
+diff --git a/package/boot/uboot-envtools/files/ipq40xx b/package/boot/uboot-envtools/files/ipq40xx
+index b24cbf979e..7f9fa5d7dd 100644
+--- a/package/boot/uboot-envtools/files/ipq40xx
++++ b/package/boot/uboot-envtools/files/ipq40xx
+@@ -35,6 +35,7 @@ alfa-network,ap120c-ac |\
+ devolo,magic-2-wifi-next |\
+ edgecore,ecw5211 |\
+ glinet,gl-ap1300 |\
++glinet,gl-a1300 |\
+ glinet,gl-b1300 |\
+ luma,wrtq-329acn |\
+ openmesh,a42 |\
+diff --git a/package/firmware/ipq-wifi/Makefile b/package/firmware/ipq-wifi/Makefile
+index e3b25bb556..726cb11383 100644
+--- a/package/firmware/ipq-wifi/Makefile
++++ b/package/firmware/ipq-wifi/Makefile
+@@ -39,6 +39,7 @@ ALLWIFIBOARDS:= \
+ 	engenius_emr3500 \
+ 	ezviz_cs-w3-wd1200g-eup \
+ 	glinet_gl-ap1300 \
++	glinet_gl-a1300 \
+ 	glinet_gl-s1300 \
+ 	linksys_ea8300 \
+ 	linksys_mr8300-v0 \
+@@ -124,6 +125,7 @@ $(eval $(call generate-ipq-wifi-package,engenius_emd1,EnGenius EMD1))
+ $(eval $(call generate-ipq-wifi-package,engenius_emr3500,EnGenius EMR3500))
+ $(eval $(call generate-ipq-wifi-package,ezviz_cs-w3-wd1200g-eup,EZVIZ CS-W3-WD1200G EUP))
+ $(eval $(call generate-ipq-wifi-package,glinet_gl-ap1300,GL.iNet GL-AP1300))
++$(eval $(call generate-ipq-wifi-package,glinet_gl-a1300,GL.iNet GL-A1300))
+ $(eval $(call generate-ipq-wifi-package,glinet_gl-s1300,GL.iNet GL-S1300))
+ $(eval $(call generate-ipq-wifi-package,linksys_ea8300,Linksys EA8300))
+ $(eval $(call generate-ipq-wifi-package,linksys_mr8300-v0,Linksys MR8300))
+diff --git a/package/firmware/ipq-wifi/board-glinet_gl-a1300.qca4019 b/package/firmware/ipq-wifi/board-glinet_gl-a1300.qca4019
+new file mode 100644
+index 0000000000000000000000000000000000000000..0b9a908bcdd0f86f1de1100b98556e353085fcef
+GIT binary patch
+literal 48596
+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
+
+literal 0
+HcmV?d00001
+
+diff --git a/target/linux/ipq40xx/base-files/etc/board.d/01_leds b/target/linux/ipq40xx/base-files/etc/board.d/01_leds
+index ac11655904..b692568b03 100755
+--- a/target/linux/ipq40xx/base-files/etc/board.d/01_leds
++++ b/target/linux/ipq40xx/base-files/etc/board.d/01_leds
+@@ -23,7 +23,8 @@ avm,fritzbox-4040)
+ 	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x1e"
+ 	;;
+ avm,fritzbox-7530 |\
+-glinet,gl-b1300)
++glinet,gl-b1300 |\
++glinet,gl-a1300)
+ 	ucidef_set_led_wlan "wlan" "WLAN" "green:wlan" "phy0tpt"
+ 	;;
+ edgecore,oap100)
+diff --git a/target/linux/ipq40xx/base-files/etc/board.d/02_network b/target/linux/ipq40xx/base-files/etc/board.d/02_network
+index 1d4c78833a..f283aeb41a 100755
+--- a/target/linux/ipq40xx/base-files/etc/board.d/02_network
++++ b/target/linux/ipq40xx/base-files/etc/board.d/02_network
+@@ -96,10 +96,11 @@ ipq40xx_setup_interfaces()
+ 		;;
+ 	glinet,gl-ap1300 |\
+ 	glinet,gl-b1300 |\
+-	glinet,gl-s1300)
+-		ucidef_set_interfaces_lan_wan "eth0" "eth1"
++	glinet,gl-s1300 |\
++	glinet,gl-a1300)
++		ucidef_set_interfaces_lan_wan "eth1" "eth0"
+ 		ucidef_add_switch "switch0" \
+-			"0u@eth0" "3:lan" "4:lan"
++			"0u@eth1" "3:lan" "4:lan"
+ 		;;
+ 	mobipromo,cm520-79f)
+ 		ucidef_add_switch "switch0" \
+@@ -181,6 +182,10 @@ ipq40xx_setup_macs()
+ 		lan_mac=$(cat /sys/firmware/mikrotik/hard_config/mac_base)
+ 		label_mac="$lan_mac"
+ 		;;
++	glinet,gl-a1300)
++		wan_mac=$(mtd_get_mac_binary ART 0)
++		lan_mac=$(macaddr_add "$wan_mac" 1)
++		;;
+ 	esac
+ 
+ 	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
+diff --git a/target/linux/ipq40xx/base-files/etc/hotplug.d/firmware/11-ath10k-caldata b/target/linux/ipq40xx/base-files/etc/hotplug.d/firmware/11-ath10k-caldata
+index b12c9af9a7..d1d13cd569 100644
+--- a/target/linux/ipq40xx/base-files/etc/hotplug.d/firmware/11-ath10k-caldata
++++ b/target/linux/ipq40xx/base-files/etc/hotplug.d/firmware/11-ath10k-caldata
+@@ -57,6 +57,7 @@ case "$FIRMWARE" in
+ 	ezviz,cs-w3-wd1200g-eup |\
+ 	glinet,gl-ap1300 |\
+ 	glinet,gl-b1300 |\
++	glinet,gl-a1300 |\
+ 	glinet,gl-s1300 |\
+ 	linksys,ea6350v3 |\
+ 	mobipromo,cm520-79f |\
+@@ -166,6 +167,7 @@ case "$FIRMWARE" in
+ 	ezviz,cs-w3-wd1200g-eup |\
+ 	glinet,gl-ap1300 |\
+ 	glinet,gl-b1300 |\
++	glinet,gl-a1300 |\
+ 	glinet,gl-s1300 |\
+ 	linksys,ea6350v3 |\
+ 	mobipromo,cm520-79f |\
+diff --git a/target/linux/ipq40xx/base-files/lib/preinit/06_set_preinit_iface_ipq40xx.sh b/target/linux/ipq40xx/base-files/lib/preinit/06_set_preinit_iface_ipq40xx.sh
+index e97133f105..5cd45bb47c 100644
+--- a/target/linux/ipq40xx/base-files/lib/preinit/06_set_preinit_iface_ipq40xx.sh
++++ b/target/linux/ipq40xx/base-files/lib/preinit/06_set_preinit_iface_ipq40xx.sh
+@@ -7,6 +7,7 @@ set_preinit_iface() {
+ 	avm,fritzbox-4040| \
+ 	ezviz,cs-w3-wd1200g-eup| \
+ 	glinet,gl-b1300| \
++	glinet,gl-a1300| \
+ 	linksys,ea8300| \
+ 	linksys,mr8300| \
+ 	meraki,mr33| \
+diff --git a/target/linux/ipq40xx/base-files/lib/upgrade/platform.sh b/target/linux/ipq40xx/base-files/lib/upgrade/platform.sh
+index 54683977cd..2f320f6827 100644
+--- a/target/linux/ipq40xx/base-files/lib/upgrade/platform.sh
++++ b/target/linux/ipq40xx/base-files/lib/upgrade/platform.sh
+@@ -70,6 +70,7 @@ platform_do_upgrade() {
+ 	edgecore,oap100 |\
+ 	engenius,eap2200 |\
+ 	glinet,gl-ap1300 |\
++	glinet,gl-a1300 |\
+ 	luma,wrtq-329acn |\
+ 	mobipromo,cm520-79f |\
+ 	qxwlan,e2600ac-c2)
+diff --git a/target/linux/ipq40xx/files/arch/arm/boot/dts/qcom-ipq4018-gl-a1300.dts b/target/linux/ipq40xx/files/arch/arm/boot/dts/qcom-ipq4018-gl-a1300.dts
+new file mode 100644
+index 0000000000..ad4d21c116
+--- /dev/null
++++ b/target/linux/ipq40xx/files/arch/arm/boot/dts/qcom-ipq4018-gl-a1300.dts
+@@ -0,0 +1,320 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++
++#include "qcom-ipq4019.dtsi"
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
++#include <dt-bindings/soc/qcom,tcsr.h>
++
++/ {
++	model = "GL.iNet GL-A1300";
++	compatible = "glinet,gl-a1300", "qcom,ipq4019";
++
++	aliases {
++		led-boot = &led_run;
++		led-failsafe = &led_run;
++		led-running = &led_run;
++		led-upgrade = &led_run;
++	};
++
++	gl_hw {
++		compatible = "gl-hw-info";
++
++		#address-cells = <1>;
++		#size-cells = <1>;
++		model = "a1300";
++		wan = "etho";
++		lan = "eth1";
++		reset-button = "gpio-63";
++		factory_data {
++			device_mac = "ART", "0";
++			device_ddns = "ART", "0x10";
++			device_sn_bak = "ART", "0x20";
++			device_sn = "ART", "0x30";
++		};
++	};
++
++	memory {
++		device_type = "memory";
++		reg = <0x80000000 0x10000000>;
++	};
++
++	chosen {
++		bootargs-append = " ubi.mtd=ubi root=/dev/ubiblock0_1 clk_ignore_unused";
++	};
++
++	soc {
++		rng@22000 {
++			status = "okay";
++		};
++
++		mdio@90000 {
++			status = "okay";
++		};
++
++		ess-psgmii@98000 {
++			status = "okay";
++		};
++
++		tcsr@1949000 {
++			compatible = "qcom,tcsr";
++			reg = <0x1949000 0x100>;
++			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
++		};
++
++		tcsr@194b000 {
++			/* select hostmode */
++			compatible = "qcom,tcsr";
++			reg = <0x194b000 0x100>;
++			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
++			status = "okay";
++		};
++
++		ess_tcsr@1953000 {
++			compatible = "qcom,tcsr";
++			reg = <0x1953000 0x1000>;
++			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
++		};
++
++		tcsr@1957000 {
++			compatible = "qcom,tcsr";
++			reg = <0x1957000 0x100>;
++			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
++		};
++
++		usb2@60f8800 {
++			status = "okay";
++		};
++
++		usb3@8af8800 {
++			status = "okay";
++		};
++
++		crypto@8e3a000 {
++			status = "okay";
++		};
++
++		watchdog@b017000 {
++			status = "okay";
++		};
++
++		ess-switch@c000000 {
++			status = "okay";
++			switch_lan_bmp = <0x18>;
++			switch_wan_bmp = <0x20>;
++		};
++
++		edma@c080000 {
++			status = "okay";
++		};
++	};
++
++	keys {
++		compatible = "gpio-keys";
++
++		reset {
++			label = "reset";
++			gpios = <&tlmm 63 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_RESTART>;
++		};
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		led_run: blue {
++			label = "gl-a1300:blue";
++			gpios = <&tlmm 2 GPIO_ACTIVE_HIGH>;
++		};
++
++		white {
++			label = "gl-a1300:white";
++			gpios = <&tlmm 1 GPIO_ACTIVE_HIGH>;
++		};
++	};
++	gpio-export {
++		compatible = "gpio-export";
++
++		gpio_3 {
++			gpio-export,name = "gpio3";
++			gpio-export,output = <1>;
++			gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>;
++		};
++	};
++};
++
++&blsp_dma {
++	status = "okay";
++};
++
++&cryptobam {
++	status = "okay";
++};
++
++&blsp1_spi1 {
++	status = "okay";
++
++	pinctrl-0 = <&spi0_pins>;
++	pinctrl-names = "default";
++	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>, <&tlmm 5 GPIO_ACTIVE_HIGH>;
++
++	flash@0 {
++		status = "okay";
++
++		compatible = "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <24000000>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "SBL1";
++				reg = <0x00000000 0x00040000>;
++				read-only;
++			};
++
++			partition@40000 {
++				label = "MIBIB";
++				reg = <0x00040000 0x00020000>;
++				read-only;
++			};
++
++			partition@60000 {
++				label = "QSEE";
++				reg = <0x00060000 0x00060000>;
++				read-only;
++			};
++
++			partition@c0000 {
++				label = "CDT";
++				reg = <0x000c0000 0x00010000>;
++				read-only;
++			};
++
++			partition@d0000 {
++				label = "DDRPARAMS";
++				reg = <0x000d0000 0x00010000>;
++				read-only;
++			};
++
++			partition@e0000 {
++				label = "APPSBLENV"; /* uboot env*/
++				reg = <0x000e0000 0x00010000>;
++			};
++
++			partition@f0000 {
++				label = "APPSBL"; /* uboot */
++				reg = <0x000f0000 0x00080000>;
++				read-only;
++			};
++
++			partition@170000 {
++				label = "ART";
++				reg = <0x00170000 0x00010000>;
++				read-only;
++			};
++		};
++	};
++
++	spi-nand@1 {
++		status = "okay";
++
++		compatible = "spi-nand";
++		reg = <1>;
++		spi-max-frequency = <24000000>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "ubi";
++				reg = <0x00000000 0x08000000>;
++			};
++		};
++	};
++};
++
++&blsp1_uart1 {
++	pinctrl-0 = <&serial_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++};
++
++&tlmm {
++	serial_pins: serial_pinmux {
++		mux {
++			pins = "gpio60", "gpio61";
++			function = "blsp_uart0";
++			bias-disable;
++		};
++	};
++	i2c_0_pins: i2c_0_pinmux {
++		pinmux {
++			function = "blsp_i2c0";
++			pins = "gpio58", "gpio59";
++		};
++		pinconf {
++			pins = "gpio58", "gpio59";
++			drive-strength = <16>;
++			bias-pull-up;
++		};
++	};
++
++	gpios:gpio {
++		DTO {
++			pins = "gpio3";
++			function = "gpio";
++			bias-disable;
++			output-high;
++		};
++	};
++
++	spi0_pins: spi0_pinmux {
++		mux_spi {
++			function = "blsp_spi0";
++			pins = "gpio55", "gpio56", "gpio57";
++			drive-strength = <12>;
++			bias-disable;
++		};
++
++		mux_cs {
++			function = "gpio";
++			pins = "gpio54", "gpio5";
++			drive-strength = <2>;
++			bias-disable;
++			output-high;
++		};
++	};
++};
++
++&blsp1_i2c3 {
++        status = "okay";
++        pinctrl-0 = <&i2c_0_pins>;
++        pinctrl-names = "default";
++};
++
++&usb2_hs_phy {
++	status = "okay";
++};
++
++&usb3_hs_phy {
++	status = "okay";
++};
++
++&usb3_ss_phy {
++	status = "okay";
++};
++
++&wifi0 {
++	status = "okay";
++	qcom,ath10k-calibration-variant = "GL-A1300";
++};
++
++&wifi1 {
++	status = "okay";
++	qcom,ath10k-calibration-variant = "GL-A1300";
++};
+diff --git a/target/linux/ipq40xx/image/generic.mk b/target/linux/ipq40xx/image/generic.mk
+index a435a127fa..a78e7fe7d5 100644
+--- a/target/linux/ipq40xx/image/generic.mk
++++ b/target/linux/ipq40xx/image/generic.mk
+@@ -482,6 +482,23 @@ define Device/glinet_gl-ap1300
+ endef
+ TARGET_DEVICES += glinet_gl-ap1300
+ 
++define Device/glinet_gl-a1300
++	$(call Device/FitImage)
++	$(call Device/UbiFit)
++	DEVICE_VENDOR := GL.iNet
++	DEVICE_MODEL := GL-A1300
++	SOC := qcom-ipq4018
++	DEVICE_DTS_CONFIG := config@ap.dk01.1-c2
++	BLOCKSIZE := 128k
++	PAGESIZE := 2048
++	IMAGE_SIZE := 131072k
++	KERNEL_INSTALL := 1
++	DEVICE_PACKAGE := ipq-wifi-glinet_gl-a1300
++	IMAGES += sysupgrade.tar
++	IMAGE/sysupgrade.tar := sysupgrade-tar | append-gl-metadata
++endef
++TARGET_DEVICES += glinet_gl-a1300
++
+ define Device/glinet_gl-b1300
+ 	$(call Device/FitImage)
+ 	DEVICE_VENDOR := GL.iNet
+@@ -802,3 +819,4 @@ define Device/zyxel_wre6606
+ 	DEVICE_PACKAGES := -kmod-ath10k-ct kmod-ath10k-ct-smallbuffers
+ endef
+ TARGET_DEVICES += zyxel_wre6606
++
+diff --git a/target/linux/ipq40xx/patches-5.4/998-add-a1300-dts-node.patch b/target/linux/ipq40xx/patches-5.4/998-add-a1300-dts-node.patch
+new file mode 100644
+index 0000000000..8e9915dbcd
+--- /dev/null
++++ b/target/linux/ipq40xx/patches-5.4/998-add-a1300-dts-node.patch
+@@ -0,0 +1,28 @@
++--- a/arch/arm/boot/dts/Makefile
+++++ b/arch/arm/boot/dts/Makefile
++@@ -852,6 +852,7 @@ dtb-$(CONFIG_ARCH_QCOM) += \
++ 	qcom-ipq4018-ex6150v2.dtb \
++ 	qcom-ipq4018-fritzbox-4040.dtb \
++ 	qcom-ipq4018-gl-ap1300.dtb \
+++	qcom-ipq4018-gl-a1300.dtb \
++ 	qcom-ipq4018-jalapeno.dtb \
++ 	qcom-ipq4018-meshpoint-one.dtb \
++ 	qcom-ipq4018-hap-ac2.dtb \
++--- a/drivers/mtd/nand/spi/gigadevice.c
+++++ b/drivers/mtd/nand/spi/gigadevice.c
++@@ -233,6 +233,15 @@ static const struct spinand_info gigadev
++ 		     SPINAND_HAS_QE_BIT,
++ 		     SPINAND_ECCINFO(&gd5fxgq4xa_ooblayout,
++ 				     gd5fxgq4xa_ecc_get_status)),
+++	SPINAND_INFO("GD5F1GQ5xExxG", 0x51,
+++		     NAND_MEMORG(1, 2048, 128, 64, 1024, 20, 1, 1, 1),
+++		     NAND_ECCREQ(8, 512),
+++		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
+++			     		      &write_cache_variants,
+++					      &update_cache_variants),
+++		     SPINAND_HAS_QE_BIT,
+++		     SPINAND_ECCINFO(&gd5fxgq4xa_ooblayout,
+++			  	    gd5fxgq4xa_ecc_get_status)),
++ 	SPINAND_INFO("GD5F2GQ4xA", 0xF2,
++ 		     NAND_MEMORG(1, 2048, 64, 64, 2048, 40, 1, 1, 1),
++ 		     NAND_ECCREQ(8, 512),
+-- 
+2.17.1
+
